@@ -1,0 +1,26 @@
+from PIDclass import PID
+
+pidx = PID()
+pidy = PID()
+pidz = PID()
+# pid.setpoint(sp)
+# pid.setoutstart()
+# x, y, z
+ox = 0
+oy = 0
+oz = 0
+orient = [ox, oy, oz]
+
+x = input()
+y = input()
+z = input()
+pidx.setpoint(int(x))
+pidy.setpoint(int(y))
+pidz.setpoint(int(z))
+#print(str(x)+",\t"+str(y)+",\t"+str(z))
+while True:
+    
+    ox = pidx.update(ox)
+    oy = pidy.update(oy)
+    oz = pidz.update(oz)
+    print(str(ox)+",\t"+str(oy)+",\t"+str(oz))

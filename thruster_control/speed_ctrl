@@ -1,0 +1,8 @@
+from PIDclass import PID
+# t1, t2, t3, t4, t5, t6
+pid = PID()
+pid.setpoint(20)
+pid.setoutstart(10)
+out = 10
+while True:
+    out = pid.update(out)
