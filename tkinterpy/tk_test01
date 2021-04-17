@@ -1,0 +1,29 @@
+import tkinter as tk
+import cv2
+from PIL import Image
+from PIL import ImageTk
+
+
+cam = cv2.VideoCapture(0)
+main = tk.Tk()
+Frame = tk.Frame(main, height=int(cam.get(4)), width=int(cam.get(3)))
+Frame.pack(anchor = 'nw')
+
+panel = tk.Label(Frame, bd = 10)
+panel.pack(side = 'left')
+
+# Frame1 = tk.Frame(main, height=int(cam.get(4)), width=int(cam.get(3)), bg = 'red')
+# Frame1.place(x= int(cam.get(3))+10)
+
+def vstream():
+    _, frame = cam.read()
+    image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    image = Image.fromarray(image)
+    image = ImageTk.PhotoImage(image)
+
+    panel.image = image
+    panel.configure(image = image)
+    panel.after(1, vstream)
+
+vstream()
+main.mainloop()
