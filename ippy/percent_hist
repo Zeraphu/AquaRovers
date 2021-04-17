@@ -1,0 +1,70 @@
+import cv2
+import numpy as np
+import imutils
+
+
+color = ('b', 'g', 'r')
+sigma = 0.33
+def colorDetect(main_image, contour_img, center_x, center_y):
+	for i,col in enumerate(color):
+		hist = cv2.calcHist([contour_img],[i],None,[3],[0,256])
+
+	if hist[0]>hist[1] and hist[0]>hist[2]:
+		cv2.putText(main_image, 'Blue', (center_x,center_y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.25, (0,0,0), 1, cv2.LINE_AA)
+	elif hist[1]>hist[0] and hist[1]>hist[2]:
+		cv2.putText(main_image, 'Green', (center_x, center_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.25, (0, 0, 0), 1, cv2.LINE_AA)
+	elif hist[2]>hist[0] and hist[2]>hist[1]:
+		cv2.putText(main_image, 'Red', (center_x, center_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.25, (0, 0, 0), 1, cv2.LINE_AA)
+
+	return main_image
+
+
+cap = cv2.VideoCapture(0)
+while True:
+	_, frame = cap.read()
+	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+	v = np.median(gray)
+	low = int(max(0, (1-sigma)*v))
+	high = int(max(255, (1+sigma)*v))
+	canny = cv2.Canny(gray, low, high)
+
+	contours = cv2.findContours(canny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+	contours = imutils.grab_contours(contours)
+
+	for c in contours:
+		M = cv2.moments(c)
+		if M['m00'] == 0.0:
+			continue
+		cv2.drawContours(frame, [c], -1, (0, 0, 0), 2)
+		if cv2.contourArea(c) < 500:
+			continue
+		x = int(M['m10']/M['m00'])
+		y = int(M['m01']/M['m00'])
+		
+		min_x = c[0][0][0]
+		min_y = c[0][0][1]
+	
+		for i in range(0, len(c)):
+			if c[i][0][0] < min_x:
+				min_x = c[i][0][0]
+			if c[i][0][1] < min_y:
+				min_y = c[i][0][1]
+
+		max_x = c[0][0][0]
+		max_y = c[0][0][1]
+
+		for i in range(0, len(c)):
+			if c[i][0][0] > max_x:
+				max_x = c[i][0][0]
+			if c[i][0][1] > max_y:
+				max_y = c[i][0][1]
+	
+		cnt_f = frame[min_y: max_y, min_x: max_x]
+		out = colorDetect(frame, cnt_f, x, y)
+
+		cv2.imshow('Output', out)
+		cv2.imshow('canny', canny)
+	if cv2.waitKey(1)&0xFF == 27:
+		break
+cap.release() 

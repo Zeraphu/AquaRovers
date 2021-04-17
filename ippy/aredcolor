@@ -1,0 +1,95 @@
+import cv2                                                       #Importing OpenCV
+import numpy as np                                               #Importing NumPy
+
+cam = cv2.VideoCapture(0)                                        #Starting the webcam
+
+info = np.zeros((3),dtype = np.uint32)                           #Storing Final Co-ordinates
+
+size = 40                                                        #Detecting using a window of 40x40
+
+def rect_new(img, x_start, y_start, x_end, y_end):
+    lng = 30
+
+    img = cv2.line(img, (x_start, y_start), (x_start + lng, y_start), (0, 255, 0), 3)
+    img = cv2.line(img, (x_start, y_start), (x_start, y_start + lng), (0, 255, 0), 3)
+
+    img = cv2.line(img, (x_start, y_end), (x_start + lng, y_end), (0, 255, 0), 3)
+    img = cv2.line(img, (x_start, y_end), (x_start, y_end - lng), (0, 255, 0), 3)
+
+    img = cv2.line(img, (x_end, y_start), (x_end - lng, y_start), (0, 255, 0), 3)
+    img = cv2.line(img, (x_end, y_start), (x_end, y_start + lng), (0, 255, 0), 3)
+
+    img = cv2.line(img, (x_end, y_end), (x_end - lng, y_end), (0, 255, 0), 3)
+    img = cv2.line(img, (x_end, y_end), (x_end, y_end - lng), (0, 255, 0), 3)
+
+    for i in range(x_start + 10, x_end - 5, 10):
+        img = cv2.line(img, (i, y_start), (i + 5, y_start), (0, 255, 0), 1)
+        img = cv2.line(img, (i, y_end), (i + 5, y_end), (0, 255, 0), 1)
+
+    for i in range(y_start + 10, y_end - 5, 10):
+        img = cv2.line(img, (x_start, i), (x_start, i + 5), (0, 255, 0), 1)
+        img = cv2.line(img, (x_end, i), (x_end, i + 5), (0, 255, 0), 1)
+
+    return img
+
+
+
+while(True):
+
+    ret, frame = cam.read()                                      #Reading frames from webcam
+    img=frame                                                             
+    img_o=img
+
+    frame = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)                #Changing Colorspace from bgr to hsv
+
+    thresh = cv2.inRange(frame, (0,102,204), (51,255,255))       #Color thresholding
+    roi_thresh = thresh[0:size,0:size]
+    hist = cv2.calcHist([roi_thresh],[0],None,[2],[0,256])       #Histogram Calculation
+
+    min_i = 1000
+    max_i = 0
+    min_j = 1000
+    max_j = 0
+
+    image = np.zeros((480,640,3), np.uint8)                      #Blank window
+    
+    for i in range(0,len(frame[0]),size):
+
+        for j in range(0,len(frame),size):
+
+            roi_thresh = thresh[j:j+size,i:i+size]
+
+            hist = cv2.calcHist([roi_thresh],[0],None,[2],[0,256])
+
+            if(hist[1]>150):
+                
+                if(min_i>i):
+                    min_i = i
+
+                if(min_j>j):
+                    min_j = j
+
+                if(max_i<i+size):
+                    max_i = i+size
+
+                if(max_j<j+size):
+                    max_j = j+size
+
+
+                info[1] = i
+                info[2] = j
+                image = cv2.rectangle(image,(info[1],info[2]),(info[1]+size,info[2]+size), (0,255,0), 3)
+
+    img = rect_new(img, min_i, min_j, max_i, max_j) #Marking Object
+    
+    cv2.imshow('img',img)
+    cv2.imshow('thresh',thresh)
+    cv2.imshow('frame',frame)
+    cv2.imshow('image',image)
+    k = cv2.waitKey(5) & 0xFF
+
+    if k == 27:
+        break
+
+cam.release()
+cv2.destroyAllWindows()

@@ -1,0 +1,103 @@
+import cv2
+import math
+
+class shape_detailer():
+
+    def __init__(self, approx, x, y, main_image, contour):
+
+        self.center_x = x
+        self.center_y = y
+
+        self.approx = approx
+
+        self.color = ('b', 'g', 'r')
+
+        self.main_image = main_image
+
+        self.contour_img = contour
+
+        self.shape_detected = 0 #( 1 for triangle, 2 for square, 3 for circle, 4 for polygon, 5 for quad)
+
+    def computeShape(self):
+
+        if len(self.approx) == 3:
+            
+            self.shape_detected = 1
+            cv2.putText(self.main_image, 'Triangle', (self.center_x,self.center_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv2.LINE_AA)
+
+        elif len(self.approx) == 4:
+            dst1 = int(math.sqrt(math.pow(self.approx[0][0][0]-self.approx[1][0][0],2) + math.pow(self.approx[0][0][1]-self.approx[1][0][1],2)))
+            dst2 = int(math.sqrt(math.pow(self.approx[0][0][0]-self.approx[3][0][0],2) + math.pow(self.approx[0][0][1]-self.approx[3][0][1],2)))
+
+            if int(math.sqrt(math.pow(dst2 - dst1,2))) <=15:
+                cv2.putText(self.main_image, 'Square', (self.center_x,self.center_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv2.LINE_AA)
+                self.shape_detected = 2
+            else:
+                cv2.putText(self.main_image, 'Quad', (self.center_x,self.center_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv2.LINE_AA)
+                self.shape_detected = 5
+                
+        elif len(self.approx) > 4:
+            radius = []
+            for i in range(0, len(self.approx)):
+                radius.append(int(math.sqrt(math.pow(self.center_x-self.approx[i][0][0],2)+math.pow(self.center_y-self.approx[i][0][1],2))))
+
+            min_rad = radius[0]
+            for i in radius:
+                if i<min_rad:
+                    min_rad=i
+
+            flag2 = 0
+
+            for i in radius:
+                if i-min_rad>=50:
+                    flag2=1
+                    break
+
+            if flag2 == 0:
+                cv2.putText(self.main_image, 'Circle', (self.center_x,self.center_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv2.LINE_AA)
+                self.shape_detected = 3           
+            else:
+                cv2.putText(self.main_image, 'Polygon', (self.center_x,self.center_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv2.LINE_AA)
+                self.shape_detected = 4
+
+        return self.main_image
+
+    def colorDetect(self):
+
+        for i,col in enumerate(self.color):
+            hist = cv2.calcHist([self.contour_img],[i],None,[3],[0,256])
+
+        if hist[0]>hist[1] and hist[0]>hist[2]:
+            cv2.putText(self.main_image, 'Blue', (self.center_x,self.center_y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.25, (0,0,0), 1, cv2.LINE_AA)
+            b = self.main_image[self.center_y, self.center_x, 0]
+        elif hist[1]>hist[0] and hist[1]>hist[2]:
+            cv2.putText(self.main_image, 'Green', (self.center_x, self.center_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.25, (0, 0, 0), 1, cv2.LINE_AA)
+            g = self.main_image[self.center_y, self.center_x, 1]
+        elif hist[2]>hist[0] and hist[2]>hist[1]:
+            cv2.putText(self.main_image, 'Red', (self.center_x, self.center_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.25, (0, 0, 0), 1, cv2.LINE_AA)
+            r = self.main_image[self.center_y, self.center_x, 2]        
+
+        return self.main_image
+
+    def perColor(self):
+        b = 0
+        g = 0
+        r = 0
+        for i,col in enumerate(self.color):
+            hist = cv2.calcHist([self.contour_img],[i],None,[3],[0,256])
+            if hist[0]>hist[1] and hist[0]>hist[2]:
+                cv2.putText(self.main_image, 'Blue', (self.center_x,self.center_y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.25, (0,0,0), 1, cv2.LINE_AA)
+                b = b + self.main_image[self.center_y, self.center_x, 0]
+            elif hist[1]>hist[0] and hist[1]>hist[2]:
+                cv2.putText(self.main_image, 'Green', (self.center_x, self.center_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.25, (0, 0, 0), 1, cv2.LINE_AA)
+                g = g + self.main_image[self.center_y, self.center_x, 1]
+            elif hist[2]>hist[0] and hist[2]>hist[1]:
+                cv2.putText(self.main_image, 'Red', (self.center_x, self.center_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.25, (0, 0, 0), 1, cv2.LINE_AA)
+                r = r + self.main_image[self.center_y, self.center_x, 2]
+        t = b+g+r
+        if t != 0:
+            perB = (b/t)*100
+            perG = (g/t)*100
+            perR = (r/t)*100
+        return perB, perG, perR
+        

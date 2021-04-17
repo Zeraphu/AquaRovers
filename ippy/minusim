@@ -1,0 +1,18 @@
+import cv2
+
+cap = cv2.VideoCapture(0)
+
+_, ini = cap.read(0)
+cv2.imshow('initial', ini)
+st = input()
+while st == 'y':
+	_, frame = cap.read(0)
+
+	final = frame - ini
+
+	cv2.imshow('final', final)
+	cv2.imshow('frame', frame)
+	
+	if cv2.waitKey(1)&0xFF == ord('q'):
+		break
+cv2.destroyAllWindows()
